@@ -180,70 +180,7 @@
     font-size: 16px;
     padding: 10px 14px;
     border-radius: 999px;
-    cursor: pointer;
   }
-  .chip:active{ background: var(--line); }
-
-  .chat-log{ margin-bottom: 14px; }
-  .bubble{
-    font-size: 19px; line-height:1.7;
-    padding: 14px 16px;
-    border-radius: 16px;
-    margin-bottom: 10px;
-    max-width: 92%;
-  }
-  .bubble.me{
-    background: var(--celadon);
-    color: #FBF9F2;
-    margin-left: auto;
-    border-bottom-right-radius: 4px;
-  }
-  .bubble.claude{
-    background: #F5EFDF;
-    color: var(--ink);
-    margin-right: auto;
-    border-bottom-left-radius: 4px;
-  }
-  .bubble.claude .speak-btn{
-    margin-top:8px;
-    font-size:14px;
-    background:none;
-    border:1px solid var(--celadon);
-    color:var(--celadon-dk);
-    border-radius:999px;
-    padding:6px 12px;
-    cursor:pointer;
-  }
-
-  .input-row{
-    display:flex; gap:10px; align-items:flex-end;
-  }
-  #chatInput{
-    flex: 1;
-    font-family: 'Gowun Dodum', sans-serif;
-    font-size: 19px;
-    padding: 14px 16px;
-    border: 2px solid var(--line);
-    border-radius: 16px;
-    resize: none;
-    min-height: 56px;
-    max-height: 140px;
-    color: var(--ink);
-    background: #fff;
-  }
-  #chatInput:focus{ outline: none; border-color: var(--celadon); }
-
-  .round-btn{
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    border: none;
-    display:flex; align-items:center; justify-content:center;
-    font-size: 24px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  #sendBtn{ background: var(--celadon); color: white; }
-  #sendBtn:disabled{ opacity: 0.5; }
 
   .hint{ font-size: 15px; color: var(--ink-soft); margin-top:10px; text-align:center; }
   .footer-note{ text-align:center; font-size:14px; color:var(--ink-soft); opacity:0.7; margin-top: 6px; }
@@ -307,19 +244,20 @@
     <div id="journalBody"></div>
   </div>
 
-  <!-- 대화 -->
+  <!-- Claude로 연결 -->
   <div class="card chat-card">
     <div class="card-label"><span class="dot"></span>🤖 Claude와 이야기하기</div>
-    <p style="font-size:16px; color:var(--ink-soft); margin:-2px 0 14px 0; line-height:1.6;">
+    <p style="font-size:18px; line-height:1.75; margin: -2px 0 16px 0;">
       궁금한 것이 있으면 무엇이든 물어보세요. 사람이 아니라, 대답해주는 인공지능(AI) 친구예요.
     </p>
     <div class="chips" id="chips"></div>
-    <div class="chat-log" id="chatLog"></div>
-    <div class="input-row">
-      <textarea id="chatInput" rows="1" placeholder="여기에 적어보세요..."></textarea>
-      <button class="round-btn" id="sendBtn" title="보내기">➤</button>
-    </div>
-    <div class="hint">말로 하고 싶으면, 키보드에 있는 🎤 아이콘을 눌러서 말씀하세요.</div>
+    <a href="https://claude.ai" target="_blank" rel="noopener"
+       style="display:block; text-align:center; background:var(--celadon); color:#fff;
+       font-family:'Gowun Dodum',sans-serif; font-size:20px; text-decoration:none;
+       padding:16px; border-radius:16px; margin-top: 6px;">
+      🤖 Claude와 대화 시작하기
+    </a>
+    <div class="hint">버튼을 누르면 Claude 앱이 열려요.</div>
   </div>
 
   <div class="footer-note">오늘도 좋은 하루 되세요 🌿</div>
@@ -594,12 +532,7 @@ async function loadNews(){
 }
 loadNews();
 
-// ---- Chat ----
-const chatLog = document.getElementById('chatLog');
-const chatInput = document.getElementById('chatInput');
-const sendBtn = document.getElementById('sendBtn');
-let chatHistory = [];
-
+// ---- Ideas for what to ask (non-interactive — real conversations happen in the Claude app) ----
 const SUGGESTIONS = [
   "오늘 기분이 어때요?",
   "오늘 저녁 뭐 먹을지 추천해줄래요?",
@@ -607,71 +540,8 @@ const SUGGESTIONS = [
   "오늘 날씨에 어울리는 노래 추천해줘요"
 ];
 document.getElementById('chips').innerHTML = SUGGESTIONS.map(s =>
-  `<button class="chip" onclick="sendMessage('${s.replace(/'/g,"\\'")}')">${s}</button>`).join('');
-
-function addBubble(text, who){
-  const div = document.createElement('div');
-  div.className = 'bubble ' + who;
-  if(who === 'claude'){
-    div.innerHTML = `<span style="opacity:0.85;">🤖</span> <span class="msg-text"></span><br><button class="speak-btn">🔊 들려주기</button>`;
-    div.querySelector('.msg-text').textContent = text;
-    div.querySelector('.speak-btn').onclick = () => speak(text);
-  } else {
-    div.textContent = text;
-  }
-  chatLog.appendChild(div);
-  chatLog.scrollTop = chatLog.scrollHeight;
-  return div;
-}
-
-async function sendMessage(overrideText){
-  const text = (overrideText !== undefined ? overrideText : chatInput.value).trim();
-  if(!text) return;
-  addBubble(text, 'me');
-  chatInput.value = '';
-  sendBtn.disabled = true;
-
-  const thinking = addBubble('...생각하는 중이에요', 'claude');
-
-  chatHistory.push({role:"user", content: text});
-  try{
-    const systemPrimer = {
-      role: "user",
-      content: `당신은 나이 드신 분과 대화하는 다정한 대화 상대입니다. 상대는 한국어와
-      영어를 모두 편하게 사용하는 분이니, 상대가 쓰는 언어에 맞춰 답해주세요
-      (Respond in whichever language they use, Korean or English).
-      항상 존댓말을 쓰고, 짧고 쉬운 문장으로, 따뜻하고 친절하게 대답하세요.
-      너무 길게 답하지 말고 2~4문장 정도로 답해주세요.`
-    };
-    const reply = await callClaude([systemPrimer, ...chatHistory], false);
-    thinking.remove();
-    addBubble(reply || '죄송해요, 지금은 잘 모르겠어요.', 'claude');
-    chatHistory.push({role:"assistant", content: reply});
-  }catch(e){
-    thinking.remove();
-    addBubble('지금은 대화 기능을 사용할 수 없어요. 잠시 후 다시 시도해 주세요.', 'claude');
-  }finally{
-    sendBtn.disabled = false;
-  }
-}
-window.sendMessage = sendMessage;
-sendBtn.addEventListener('click', () => sendMessage());
-chatInput.addEventListener('keydown', (e) => {
-  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
-});
-
-// ---- Speak aloud ----
-// Uses the device's own text-to-speech (generally on-device, not sent to a server).
-function speak(text){
-  if(!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'ko-KR';
-  const voices = window.speechSynthesis.getVoices();
-  const koVoice = voices.find(v => v.lang && v.lang.startsWith('ko'));
-  if(koVoice) utter.voice = koVoice;
-  window.speechSynthesis.speak(utter);
-}
+  `<span class="chip">${s}</span>`).join('');
 </script>
+
 </body>
 </html>
