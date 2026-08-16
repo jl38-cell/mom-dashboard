@@ -171,16 +171,6 @@
 
   /* ---------- Chat ---------- */
   .chat-card{ padding-bottom: 18px; }
-  .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 14px; }
-  .chip{
-    background: #F5EFDF;
-    border: 1px solid var(--line);
-    color: var(--ink);
-    font-family: 'Gowun Dodum', sans-serif;
-    font-size: 16px;
-    padding: 10px 14px;
-    border-radius: 999px;
-  }
 
   .hint{ font-size: 15px; color: var(--ink-soft); margin-top:10px; text-align:center; }
   .footer-note{ text-align:center; font-size:14px; color:var(--ink-soft); opacity:0.7; margin-top: 6px; }
@@ -259,8 +249,8 @@
     <div class="card-label"><span class="dot"></span>🤖 Claude와 이야기하기</div>
     <p style="font-size:18px; line-height:1.75; margin: -2px 0 16px 0;">
       궁금한 것이 있으면 무엇이든 물어보세요. 사람이 아니라, 대답해주는 인공지능(AI) 친구예요.
+      예를 들어, <span id="chatExample">"재미있는 이야기 하나 해줄래요?"</span>처럼 물어보세요.
     </p>
-    <div class="chips" id="chips"></div>
     <a href="https://claude.ai" target="_blank" rel="noopener"
        style="display:block; text-align:center; background:var(--celadon); color:#fff;
        font-family:'Gowun Dodum',sans-serif; font-size:20px; text-decoration:none;
@@ -344,6 +334,20 @@ const JOURNAL_PAIRS = [
   ["오늘 하루, 나에게 칭찬해주고 싶은 일은 무엇인가요?", "이번 계절에 해보고 싶은 일이 있다면 무엇인가요?"],
   ["어제 저녁에는 무엇을 하셨어요?", "다음 달쯤, 기대되거나 계획하고 있는 일이 있나요?"],
   ["요즘 자주 생각나는 사람이나 추억이 있나요?", "앞으로 새로 해보고 싶은 취미가 있으세요?"],
+];
+
+/* ============================================================
+   4) Claude에게 물어볼 예시 (rotating daily — meant to spark
+      curiosity, not chores like "what to cook")
+   ============================================================ */
+const CHAT_EXAMPLES = [
+  "재미있는 이야기 하나 해줄래요?",
+  "제가 모르는 신기한 사실 하나 알려줄래요?",
+  "옛날 이야기 하나 들려줄래요?",
+  "오늘 세계에서 있었던 신기하고 재미있는 일이 있어요?",
+  "저한테 좋은 질문 하나 해줄래요?",
+  "요즘 사람들은 뭐에 관심이 많아요?",
+  "제가 좋아할 만한 이야기 하나 해줄래요?",
 ];
 
 /* ============================================================
@@ -454,6 +458,9 @@ loadJoy();
 // ---- Quote of the day ----
 document.getElementById('quoteText').textContent = QUOTES[dayIndex(QUOTES.length)];
 
+// ---- Chat example of the day ----
+document.getElementById('chatExample').textContent = '"' + CHAT_EXAMPLES[dayIndex(CHAT_EXAMPLES.length)] + '"';
+
 // ---- Journaling prompts ----
 (function initJournal(){
   const pair = JOURNAL_PAIRS[dayIndex(JOURNAL_PAIRS.length)];
@@ -516,16 +523,6 @@ async function loadNews(){
   }
 }
 loadNews();
-
-// ---- Ideas for what to ask (non-interactive — real conversations happen in the Claude app) ----
-const SUGGESTIONS = [
-  "오늘 기분이 어때요?",
-  "오늘 저녁 뭐 먹을지 추천해줄래요?",
-  "재미있는 이야기 하나 해줄래요?",
-  "오늘 날씨에 어울리는 노래 추천해줘요"
-];
-document.getElementById('chips').innerHTML = SUGGESTIONS.map(s =>
-  `<span class="chip">${s}</span>`).join('');
 </script>
 
 </body>
