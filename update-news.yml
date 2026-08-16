@@ -1,0 +1,31 @@
+name: Update Daily News
+
+on:
+  schedule:
+    - cron: '0 20 * * *'   # ~6am Sydney time (may shift ±1hr with daylight saving)
+  workflow_dispatch:        # lets you run it manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update-news:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch today's news
+        run: python scripts/fetch_news.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "news-bot"
+          git config user.email "actions@github.com"
+          git add news.json
+          git diff --staged --quiet || git commit -m "Update daily news"
+          git push

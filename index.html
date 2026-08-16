@@ -222,10 +222,24 @@
     </div>
   </div>
 
-  <!-- 이야기 -->
+  <!-- 뉴스 -->
   <div class="card" id="newsCard">
-    <div class="card-label"><span class="dot"></span><span id="newsLabel">오늘의 이야기</span></div>
-    <div id="newsBody"></div>
+    <div class="card-label"><span class="dot"></span>오늘의 뉴스</div>
+    <p style="font-size:15px; color:var(--ink-soft); margin:-4px 0 14px 0;">실제 뉴스 헤드라인이에요 (매일 아침 새로 업데이트)</p>
+    <div style="margin-bottom:16px;">
+      <div style="font-weight:700; color:var(--celadon-dk); font-size:16px; margin-bottom:8px;">🇦🇺 호주 소식</div>
+      <div id="localNewsBody">
+        <div class="skeleton" style="width:90%"></div>
+        <div class="skeleton" style="width:75%"></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:700; color:var(--celadon-dk); font-size:16px; margin-bottom:8px;">🌏 세계 소식</div>
+      <div id="worldNewsBody">
+        <div class="skeleton" style="width:90%"></div>
+        <div class="skeleton" style="width:75%"></div>
+      </div>
+    </div>
   </div>
 
   <!-- 한마디 -->
@@ -330,19 +344,6 @@ const JOURNAL_PAIRS = [
   ["오늘 하루, 나에게 칭찬해주고 싶은 일은 무엇인가요?", "이번 계절에 해보고 싶은 일이 있다면 무엇인가요?"],
   ["어제 저녁에는 무엇을 하셨어요?", "다음 달쯤, 기대되거나 계획하고 있는 일이 있나요?"],
   ["요즘 자주 생각나는 사람이나 추억이 있나요?", "앞으로 새로 해보고 싶은 취미가 있으세요?"],
-];
-
-/* ============================================================
-   4) 소식 대신 보여줄 예비 이야기 (fallback content if the
-      live news fetch isn't available — e.g. when this file is
-      opened outside of Claude)
-   ============================================================ */
-const FALLBACK_STORIES = [
-  "오늘은 창밖을 보며 잠깐이라도 하늘을 올려다보는 시간을 가져보는 건 어떨까요.",
-  "따뜻한 차 한 잔과 함께 좋아하는 노래를 들어보는 하루가 되면 좋겠어요.",
-  "오늘 만나는 사람에게 먼저 웃으며 인사를 건네보세요.",
-  "가까운 곳이라도 잠깐 걸어보는 것이 몸과 마음에 좋아요.",
-  "오래된 사진첩을 꺼내보는 것도 오늘 하루의 좋은 즐거움이 될 수 있어요."
 ];
 
 /* ============================================================
@@ -491,12 +492,28 @@ async function loadWeather(){
 }
 loadWeather();
 
-// ---- 오늘의 이야기 (instant — no network delay) ----
-function loadNews(){
-  document.getElementById('newsLabel').textContent = '오늘의 이야기';
-  const idx = dayIndex(FALLBACK_STORIES.length);
-  document.getElementById('newsBody').innerHTML =
-    `<div class="news-item"><span class="bullet">·</span><p>${FALLBACK_STORIES[idx]}</p></div>`;
+// ---- 오늘의 뉴스 (reads news.json, kept fresh by a daily GitHub Action) ----
+function renderNewsList(elId, items){
+  const el = document.getElementById(elId);
+  if(!items || items.length === 0){
+    el.innerHTML = '<p style="color:var(--ink-soft); font-size:18px;">지금은 뉴스를 가져올 수 없어요.</p>';
+    return;
+  }
+  el.innerHTML = items.map(t =>
+    `<div class="news-item"><span class="bullet">·</span><p>${t}</p></div>`).join('');
+}
+
+async function loadNews(){
+  try{
+    const res = await fetch(`./news.json?t=${Date.now()}`); // cache-busted
+    if(!res.ok) throw new Error('fetch failed');
+    const data = await res.json();
+    renderNewsList('localNewsBody', data.local);
+    renderNewsList('worldNewsBody', data.world);
+  }catch(e){
+    renderNewsList('localNewsBody', []);
+    renderNewsList('worldNewsBody', []);
+  }
 }
 loadNews();
 
